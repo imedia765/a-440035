@@ -8,14 +8,26 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
   // Log authentication and role information for debugging
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Checking authentication and roles...');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       console.log('Current auth user:', user);
       
+      if (authError) {
+        console.error('Auth error:', authError);
+        return;
+      }
+      
       if (user) {
-        const { data: roles } = await supabase
+        const { data: roles, error: rolesError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', user.id);
+          
+        if (rolesError) {
+          console.error('Error fetching roles:', rolesError);
+          return;
+        }
+        
         console.log('User roles:', roles);
       }
     };
@@ -27,7 +39,7 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
   const { data: members, isLoading, error } = useQuery({
     queryKey: ['collectorMembers', collectorName],
     queryFn: async () => {
-      console.log('Fetching members for collector:', collectorName);
+      console.log('Starting member fetch for collector:', collectorName);
       
       const { data, error } = await supabase
         .from('members')
@@ -39,7 +51,7 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
         throw error;
       }
 
-      console.log('Members data:', data);
+      console.log('Members data fetched:', data);
       return data as Member[];
     },
     enabled: !!collectorName,
@@ -47,6 +59,7 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
 
   // Basic loading state
   if (isLoading) {
+    console.log('Component in loading state');
     return (
       <div className="flex justify-center items-center p-4">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -56,6 +69,7 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
 
   // Error handling
   if (error) {
+    console.error('Component in error state:', error);
     return (
       <div className="p-4 text-red-500">
         Error loading members: {error instanceof Error ? error.message : 'Unknown error'}
@@ -65,6 +79,7 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
 
   // No data state
   if (!members || members.length === 0) {
+    console.log('No members found for collector:', collectorName);
     return (
       <div className="p-4 text-gray-500">
         No members found for collector: {collectorName}
@@ -72,6 +87,8 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
     );
   }
 
+  console.log('Rendering member list with count:', members.length);
+  
   // Simplified member list rendering
   return (
     <div className="space-y-4">
