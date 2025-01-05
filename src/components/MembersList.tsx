@@ -8,7 +8,7 @@ import MemberCard from './members/MemberCard';
 import PaymentDialog from './members/PaymentDialog';
 import { Member } from '@/types/member';
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { generateMembersPDF } from '@/utils/pdfGenerator';
 
@@ -17,8 +17,11 @@ interface MembersListProps {
   userRole: string | null;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
   const { data: collectorInfo } = useQuery({
@@ -38,21 +41,23 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
       return collectorData;
     },
     enabled: userRole === 'collector',
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  const { data: members, isLoading } = useQuery({
-    queryKey: ['members', searchTerm, userRole],
+  const { data: membersData, isLoading } = useQuery({
+    queryKey: ['members', searchTerm, userRole, currentPage],
     queryFn: async () => {
       console.log('Fetching members with search term:', searchTerm);
       let query = supabase
         .from('members')
-        .select('*');
+        .select('*', { count: 'exact' });
       
+      // Add search filter if search term exists
       if (searchTerm) {
-        // Fix: Use the correct or syntax with a single string
         query = query.or(`full_name.ilike.%${searchTerm}%,member_number.ilike.%${searchTerm}%,collector.ilike.%${searchTerm}%`);
       }
 
+      // Add collector filter for collector role
       if (userRole === 'collector') {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -69,8 +74,13 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
         }
       }
       
-      const { data, error } = await query
-        .order('created_at', { ascending: false });
+      // Add pagination
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+      
+      const { data, count, error } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
       
       if (error) {
         console.error('Error fetching members:', error);
@@ -78,10 +88,17 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
       }
       
       console.log('Members query result:', data);
-      return data as Member[];
+      return {
+        members: data as Member[],
+        totalCount: count || 0
+      };
     },
+    staleTime: 30 * 1000, // Cache for 30 seconds
+    keepPreviousData: true, // Keep previous data while fetching new data
   });
 
+  const totalPages = Math.ceil((membersData?.totalCount || 0) / ITEMS_PER_PAGE);
+  const members = membersData?.members || [];
   const selectedMember = members?.find(m => m.id === selectedMemberId);
 
   const handlePrintMembers = () => {
@@ -126,16 +143,49 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
       )}
 
       <ScrollArea className="h-[600px] w-full rounded-md">
-        <Accordion type="single" collapsible className="space-y-4">
-          {members?.map((member) => (
-            <MemberCard
-              key={member.id}
-              member={member}
-              userRole={userRole}
-              onPaymentClick={() => setSelectedMemberId(member.id)}
-            />
-          ))}
-        </Accordion>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dashboard-accent1"></div>
+          </div>
+        ) : (
+          <>
+            <Accordion type="single" collapsible className="space-y-4">
+              {members?.map((member) => (
+                <MemberCard
+                  key={member.id}
+                  member={member}
+                  userRole={userRole}
+                  onPaymentClick={() => setSelectedMemberId(member.id)}
+                />
+              ))}
+            </Accordion>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-6 pb-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="bg-dashboard-card border-white/10"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-dashboard-text">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="bg-dashboard-card border-white/10"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </ScrollArea>
 
       {selectedMember && (
