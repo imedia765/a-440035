@@ -7,10 +7,10 @@ import CollectorPaymentSummary from './CollectorPaymentSummary';
 import MemberCard from './members/MemberCard';
 import PaymentDialog from './members/PaymentDialog';
 import { Member } from '@/types/member';
-import { Button } from "@/components/ui/button";
-import { Printer, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { generateMembersPDF } from '@/utils/pdfGenerator';
+import MembersListHeader from './members/MembersListHeader';
+import MembersPagination from './members/MembersPagination';
 
 interface MembersListProps {
   searchTerm: string;
@@ -41,7 +41,7 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
       return collectorData;
     },
     enabled: userRole === 'collector',
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: membersData, isLoading } = useQuery({
@@ -52,12 +52,10 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
         .from('members')
         .select('*', { count: 'exact' });
       
-      // Add search filter if search term exists
       if (searchTerm) {
         query = query.or(`full_name.ilike.%${searchTerm}%,member_number.ilike.%${searchTerm}%,collector.ilike.%${searchTerm}%`);
       }
 
-      // Add collector filter for collector role
       if (userRole === 'collector') {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -74,7 +72,6 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
         }
       }
       
-      // Add pagination
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
       
@@ -87,14 +84,12 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
         throw error;
       }
       
-      console.log('Members query result:', data);
       return {
         members: data as Member[],
         totalCount: count || 0
       };
     },
-    staleTime: 30 * 1000, // Cache for 30 seconds
-    keepPreviousData: true, // Keep previous data while fetching new data
+    staleTime: 30 * 1000,
   });
 
   const totalPages = Math.ceil((membersData?.totalCount || 0) / ITEMS_PER_PAGE);
@@ -130,17 +125,12 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
 
   return (
     <div className="space-y-6">
-      {userRole === 'collector' && members && members.length > 0 && (
-        <div className="flex justify-end mb-4">
-          <Button
-            onClick={handlePrintMembers}
-            className="flex items-center gap-2 bg-dashboard-accent1 hover:bg-dashboard-accent1/80"
-          >
-            <Printer className="w-4 h-4" />
-            Print Members List
-          </Button>
-        </div>
-      )}
+      <MembersListHeader 
+        userRole={userRole}
+        onPrint={handlePrintMembers}
+        hasMembers={members.length > 0}
+        collectorInfo={collectorInfo}
+      />
 
       <ScrollArea className="h-[600px] w-full rounded-md">
         {isLoading ? (
@@ -160,30 +150,11 @@ const MembersList = ({ searchTerm, userRole }: MembersListProps) => {
               ))}
             </Accordion>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-6 pb-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="bg-dashboard-card border-white/10"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-dashboard-text">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="bg-dashboard-card border-white/10"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            <MembersPagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </>
         )}
       </ScrollArea>
