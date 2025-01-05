@@ -3,8 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
 import { Member } from "@/types/member";
 import { Loader2 } from "lucide-react";
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
+  const { session } = useAuthSession();
+
   // Log authentication and role information for debugging
   useEffect(() => {
     const checkAuth = async () => {
@@ -54,8 +57,14 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
       console.log('Members data fetched:', data);
       return data as Member[];
     },
-    enabled: !!collectorName,
+    enabled: !!collectorName && !!session, // Only fetch if we have both a collector name and a valid session
   });
+
+  // If no session, don't show loading state
+  if (!session) {
+    console.log('No active session, skipping member fetch');
+    return null;
+  }
 
   // Basic loading state
   if (isLoading) {
