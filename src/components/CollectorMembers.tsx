@@ -5,7 +5,7 @@ import { Member } from "@/types/member";
 import { Loader2 } from "lucide-react";
 
 const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
-  // Log authentication and role information on mount
+  // Log authentication and role information for debugging
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -23,7 +23,7 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
     checkAuth();
   }, []);
 
-  // Fetch members data
+  // Simplified query to fetch members
   const { data: members, isLoading, error } = useQuery({
     queryKey: ['collectorMembers', collectorName],
     queryFn: async () => {
@@ -45,6 +45,7 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
     enabled: !!collectorName,
   });
 
+  // Basic loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-4">
@@ -53,14 +54,16 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
     );
   }
 
+  // Error handling
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error: {error instanceof Error ? error.message : 'Failed to load members'}
+        Error loading members: {error instanceof Error ? error.message : 'Unknown error'}
       </div>
     );
   }
 
+  // No data state
   if (!members || members.length === 0) {
     return (
       <div className="p-4 text-gray-500">
@@ -69,6 +72,7 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
     );
   }
 
+  // Simplified member list rendering
   return (
     <div className="space-y-4">
       <ul className="space-y-2">
@@ -77,20 +81,11 @@ const CollectorMembers = ({ collectorName }: { collectorName: string }) => {
             key={member.id}
             className="bg-card p-4 rounded-lg border border-border"
           >
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">{member.full_name}</p>
-                <p className="text-sm text-muted-foreground">
-                  Member #: {member.member_number}
-                </p>
-              </div>
-              <span className={`px-2 py-1 rounded-full text-xs ${
-                member.status === 'active' 
-                  ? 'bg-green-500/20 text-green-400' 
-                  : 'bg-gray-500/20 text-gray-400'
-              }`}>
-                {member.status}
-              </span>
+            <div>
+              <p className="font-medium">{member.full_name}</p>
+              <p className="text-sm text-muted-foreground">
+                Member #: {member.member_number}
+              </p>
             </div>
           </li>
         ))}
