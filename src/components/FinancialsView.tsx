@@ -71,7 +71,7 @@ const FinancialsView = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-dashboard-accent1" />
       </div>
     );
   }
@@ -80,66 +80,71 @@ const FinancialsView = () => {
     <div className="space-y-6">
       <header className="mb-8">
         <h1 className="text-3xl font-medium mb-2 text-white">Financial Management</h1>
-        <p className="text-dashboard-muted">View and manage payment requests</p>
+        <p className="text-dashboard-text">View and manage payment requests</p>
       </header>
 
-      <Card className="bg-dashboard-card p-6 border border-white/10">
-        <h2 className="text-xl font-medium text-white mb-4">Payment Requests</h2>
-        <div className="rounded-md border border-white/10">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Member</TableHead>
-                <TableHead>Collector</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments?.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell>{format(new Date(payment.created_at), 'PPP')}</TableCell>
-                  <TableCell>{payment.members?.full_name}</TableCell>
-                  <TableCell>{payment.collectors?.name}</TableCell>
-                  <TableCell className="capitalize">{payment.payment_type}</TableCell>
-                  <TableCell>£{payment.amount}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${payment.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                        payment.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                        'bg-yellow-100 text-yellow-800'}`}>
-                      {payment.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {payment.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-green-500 hover:text-green-600 hover:bg-green-100/10"
-                          onClick={() => handleApproval(payment.id, true)}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-100/10"
-                          onClick={() => handleApproval(payment.id, false)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
+      <Card className="bg-dashboard-card border-dashboard-accent1/20">
+        <div className="p-6">
+          <h2 className="text-xl font-medium text-white mb-4">Payment Requests</h2>
+          <div className="rounded-md border border-white/10">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-white/10 hover:bg-white/5">
+                  <TableHead className="text-dashboard-text">Date</TableHead>
+                  <TableHead className="text-dashboard-text">Member</TableHead>
+                  <TableHead className="text-dashboard-text">Collector</TableHead>
+                  <TableHead className="text-dashboard-text">Type</TableHead>
+                  <TableHead className="text-dashboard-text">Amount</TableHead>
+                  <TableHead className="text-dashboard-text">Status</TableHead>
+                  <TableHead className="text-dashboard-text">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {payments?.map((payment) => (
+                  <TableRow 
+                    key={payment.id}
+                    className="border-white/10 hover:bg-white/5"
+                  >
+                    <TableCell className="text-dashboard-text">{format(new Date(payment.created_at), 'PPP')}</TableCell>
+                    <TableCell className="text-white font-medium">{payment.members?.full_name}</TableCell>
+                    <TableCell className="text-dashboard-accent1">{payment.collectors?.name}</TableCell>
+                    <TableCell className="capitalize text-dashboard-text">{payment.payment_type}</TableCell>
+                    <TableCell className="text-dashboard-accent3">£{payment.amount}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        ${payment.status === 'approved' ? 'bg-dashboard-accent3/20 text-dashboard-accent3' : 
+                          payment.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 
+                          'bg-dashboard-warning/20 text-dashboard-warning'}`}>
+                        {payment.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {payment.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-dashboard-accent3 hover:text-dashboard-accent3 hover:bg-dashboard-accent3/20"
+                            onClick={() => handleApproval(payment.id, true)}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-red-400 hover:text-red-400 hover:bg-red-500/20"
+                            onClick={() => handleApproval(payment.id, false)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </Card>
     </div>
