@@ -25,8 +25,8 @@ const FinancialsView = () => {
         .from('payment_requests')
         .select(`
           *,
-          members:member_id (full_name),
-          collectors:collector_id (name)
+          members!payment_requests_member_id_fkey(full_name),
+          collectors:members_collectors(name)
         `)
         .order('created_at', { ascending: false });
 

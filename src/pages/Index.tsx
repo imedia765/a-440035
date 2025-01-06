@@ -7,6 +7,7 @@ import MemberSearch from '@/components/MemberSearch';
 import CollectorsList from '@/components/CollectorsList';
 import AuditLogsView from '@/components/AuditLogsView';
 import SystemToolsView from '@/components/SystemToolsView';
+import FinancialsView from '@/components/FinancialsView';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useToast } from "@/hooks/use-toast";
 import MainLayout from '@/components/layout/MainLayout';
