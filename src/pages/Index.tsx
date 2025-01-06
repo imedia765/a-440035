@@ -130,6 +130,8 @@ const Index = () => {
             <CollectorsList />
           </>
         );
+      case 'financials':
+        return <FinancialsView />;
       case 'audit':
         return <AuditLogsView />;
       case 'system':

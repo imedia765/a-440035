@@ -153,7 +153,7 @@ export const useRoleAccess = () => {
 
     switch (userRole) {
       case 'admin':
-        return true;
+        return ['dashboard', 'users', 'collectors', 'audit', 'system', 'financials'].includes(tab);
       case 'collector':
         return ['dashboard', 'users'].includes(tab);
       case 'member':
