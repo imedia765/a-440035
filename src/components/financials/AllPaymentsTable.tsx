@@ -49,8 +49,9 @@ const AllPaymentsTable = ({ showHistory = false }: AllPaymentsTableProps) => {
         throw error;
       }
 
+      // Group payments by collector name instead of ID
       const groupedPayments = data?.reduce((acc, payment) => {
-        const collectorName = payment.collectors?.[0]?.name || payment.collector_id;
+        const collectorName = payment.collectors?.[0]?.name || 'Unknown Collector';
         if (!acc[collectorName]) {
           acc[collectorName] = [];
         }
