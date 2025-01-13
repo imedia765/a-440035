@@ -1,5 +1,9 @@
 import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
 import { vi } from 'vitest';
+import { render } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -23,12 +27,20 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
-// Mock IntersectionObserver
+// Mock IntersectionObserver with proper interface
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
+  root: Element | null = null;
+  rootMargin: string = "0px";
+  thresholds: ReadonlyArray<number> = [0];
+  
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+    // Constructor implementation
+  }
+  
   observe() {}
   unobserve() {}
   disconnect() {}
+  takeRecords(): IntersectionObserverEntry[] { return []; }
 };
 
 // Mock window.scrollTo
@@ -57,3 +69,26 @@ vi.mock('@/integrations/supabase/client', () => ({
     }),
   },
 }));
+
+// Create a wrapper with providers for testing
+export function renderWithProviders(ui: ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {ui}
+    </QueryClientProvider>
+  );
+}
+
+// Cleanup after each test case
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
