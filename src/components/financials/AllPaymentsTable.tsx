@@ -49,12 +49,8 @@ const AllPaymentsTable = ({ showHistory = false }: AllPaymentsTableProps) => {
         throw error;
       }
 
-      // Group payments by collector
       const groupedPayments = data?.reduce((acc, payment) => {
-        // Get collector name from the members_collectors relationship
         const collectorName = payment.collectors?.[0]?.name || payment.collector_id;
-        console.log('Payment collector:', payment.collectors, 'Collector ID:', payment.collector_id);
-        
         if (!acc[collectorName]) {
           acc[collectorName] = [];
         }
@@ -91,6 +87,32 @@ const AllPaymentsTable = ({ showHistory = false }: AllPaymentsTableProps) => {
       toast({
         title: "Error",
         description: "Failed to process the payment request.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (paymentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('payment_requests')
+        .delete()
+        .eq('id', paymentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Payment Deleted",
+        description: "The payment record has been deleted successfully.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['payment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-statistics'] });
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the payment record.",
         variant: "destructive",
       });
     }
@@ -173,6 +195,7 @@ const AllPaymentsTable = ({ showHistory = false }: AllPaymentsTableProps) => {
                           payment={payment}
                           onApprove={(id) => handleApproval(id, true)}
                           onReject={(id) => handleApproval(id, false)}
+                          onDelete={handleDelete}
                         />
                       ))}
                     </TableBody>
