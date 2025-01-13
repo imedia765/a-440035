@@ -36,7 +36,7 @@ const AllPaymentsTable = ({ showHistory = false }: AllPaymentsTableProps) => {
             phone,
             email
           ),
-          collectors:members_collectors(
+          collectors:members_collectors!payment_requests_collector_id_fkey(
             name,
             phone,
             email
@@ -49,9 +49,9 @@ const AllPaymentsTable = ({ showHistory = false }: AllPaymentsTableProps) => {
         throw error;
       }
 
-      // Group payments by collector name instead of ID
+      // Group payments by collector name, ensuring we get the name from the joined data
       const groupedPayments = data?.reduce((acc, payment) => {
-        const collectorName = payment.collectors?.[0]?.name || 'Unknown Collector';
+        const collectorName = payment.collectors?.[0]?.name || 'Unassigned';
         if (!acc[collectorName]) {
           acc[collectorName] = [];
         }
