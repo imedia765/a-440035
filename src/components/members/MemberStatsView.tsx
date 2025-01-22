@@ -3,15 +3,26 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import MetricCard from '../MetricCard';
 import { Card } from '../ui/card';
+import DownloadButtons from '../print/DownloadButtons';
 
 const MemberStatsView = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['memberStats'],
     queryFn: async () => {
-      // Get all members
+      // Get all members with collector information
       const { data: members } = await supabase
         .from('members')
-        .select('id, gender, date_of_birth');
+        .select(`
+          id, 
+          gender, 
+          date_of_birth,
+          full_name,
+          member_number,
+          collector,
+          members_collectors!members_collectors_member_number_fkey (
+            name
+          )
+        `);
 
       // Get all family members
       const { data: familyMembers } = await supabase
@@ -46,8 +57,18 @@ const MemberStatsView = () => {
         total: allMembers.length,
         men: allMembers.filter(m => m.gender === 'male').length,
         women: allMembers.filter(m => m.gender === 'female').length,
-        ageGroups: {} as Record<string, number>
+        ageGroups: {} as Record<string, number>,
+        membersByCollector: {} as Record<string, any[]>
       };
+
+      // Group members by collector
+      allMembers.forEach(member => {
+        const collectorName = member.collector || 'Unassigned';
+        if (!memberStats.membersByCollector[collectorName]) {
+          memberStats.membersByCollector[collectorName] = [];
+        }
+        memberStats.membersByCollector[collectorName].push(member);
+      });
 
       // Process family members
       const familyStats = {
@@ -91,7 +112,15 @@ const MemberStatsView = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-white mb-6">Member Statistics</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-semibold text-white">Member Statistics</h2>
+        {stats?.members.membersByCollector && (
+          <DownloadButtons 
+            members={Object.values(stats.members.membersByCollector).flat()} 
+            className="w-64"
+          />
+        )}
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard
